@@ -27,6 +27,7 @@ private lateinit var allowedServerID: String
         val jda = JDABuilder.createDefault(token,
             GatewayIntent.GUILD_MESSAGES,
             GatewayIntent.DIRECT_MESSAGES,
+            GatewayIntent.GUILD_VOICE_STATES,
             GatewayIntent.MESSAGE_CONTENT).build()
         jda.addEventListener(messageChecker, serverChecker)
 
