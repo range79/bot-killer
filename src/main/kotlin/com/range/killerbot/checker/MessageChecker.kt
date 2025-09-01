@@ -1,7 +1,6 @@
 package com.range.killerbot.checker
 
 
-import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -11,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 import java.time.Duration
-import kotlin.concurrent.thread
 
 
 @Component
@@ -23,7 +21,7 @@ class MessageChecker(
 
     private val logger: Logger = LoggerFactory.getLogger(MessageChecker::class.java)
 
-    private val SPAM_LIMIT = 8
+    private val SPAM_LIMIT = 10
     private val TIME_WINDOW_SECONDS = 30L
     private val MUTE_DURATION_HOURS = 10L
 

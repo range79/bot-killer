@@ -74,7 +74,7 @@ For the amazing people who helped make this project possible, see the full list 
 ## 🔒 Anti-Spam Logic
 
 * Each media message (image/link) increases a counter in Redis.
-* If a user exceeds **8 messages within 30 seconds**, they are muted for **10 hours**.
+* If a user exceeds **10 messages within 30 seconds**, they are muted for **10 hours**.
 * The bot deletes recent spam messages from all text channels.
 
 ## 📜 License

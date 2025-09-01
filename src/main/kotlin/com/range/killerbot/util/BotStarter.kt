@@ -2,14 +2,11 @@ package com.range.killerbot.util
 
 import com.range.killerbot.checker.MessageChecker
 import com.range.killerbot.checker.ServerChecker
-import jakarta.annotation.PostConstruct
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
-import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.requests.GatewayIntent
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.stereotype.Component
 
@@ -42,6 +39,7 @@ private lateinit var allowedServerID: String
                 logger.info("Not allowed server at startup: ${guild.name}. Leaving...")
                 guild.leave().queue()
             }
+
         }
 
         return  jda
