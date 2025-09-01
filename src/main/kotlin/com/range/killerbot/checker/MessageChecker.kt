@@ -21,7 +21,7 @@ class MessageChecker(
 
     private val logger: Logger = LoggerFactory.getLogger(MessageChecker::class.java)
 
-    private val SPAM_LIMIT = 10
+    private val SPAM_LIMIT = 8
     private val TIME_WINDOW_SECONDS = 30L
     private val MUTE_DURATION_HOURS = 10L
 
