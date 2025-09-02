@@ -8,3 +8,6 @@ This project wouldn’t have been possible without the support and contributions
 
 - [**Zeus**](https://github.com/Zeuss7613)  
   Helped extensively with testing on live servers. His contributions ensured that the bot behaved correctly under real-world scenarios and handled unexpected user interactions smoothly.  
+
+- [**Ahmet**](https://github.com/ahmetozmntn)
+  Helped fixing redis problem
