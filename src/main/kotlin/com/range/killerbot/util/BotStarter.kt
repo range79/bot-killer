@@ -2,6 +2,7 @@ package com.range.killerbot.util
 
 import com.range.killerbot.checker.MessageChecker
 import com.range.killerbot.checker.ServerChecker
+import com.range.killerbot.properties.BotProperties
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.requests.GatewayIntent
@@ -14,17 +15,17 @@ import org.springframework.stereotype.Component
 class BotStarter(
 
     private var messageChecker: MessageChecker,
-    private var serverChecker: ServerChecker
-){   @Value("\${discord.serverid}")
-private lateinit var allowedServerID: String
+    private var serverChecker: ServerChecker,
+private var botProperties: BotProperties
+){
+
 
     private val logger = LoggerFactory.getLogger(BotStarter::class.java)
-    @Value("\${killerbot.botToken}")
-    private lateinit var token: String
+
 
     @Bean
     fun run(): JDA {
-        val jda = JDABuilder.createDefault(token,
+        val jda = JDABuilder.createDefault(botProperties.token,
             GatewayIntent.GUILD_MESSAGES,
             GatewayIntent.DIRECT_MESSAGES,
             GatewayIntent.GUILD_VOICE_STATES,
@@ -36,7 +37,7 @@ private lateinit var allowedServerID: String
 
         jda.awaitReady()
         jda.guilds.forEach { guild ->
-            if (guild.id != allowedServerID) {
+            if (guild.id != botProperties.serverId) {
                 logger.info("Not allowed server at startup: ${guild.name}. Leaving...")
                 guild.leave().queue()
             }
