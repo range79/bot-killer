@@ -1,82 +1,23 @@
-# KillerBot
+Markdown# KillerBot
 
-KillerBot is a **Discord moderation bot** built with **Spring Boot**, **JDA (Java Discord API)**, and **Redis**.
-It is designed to run in **only one allowed server** and provides **anti-spam protection** for media messages (images & links).
+KillerBot is a simple Discord moderation bot focused on anti-spam protection for media messages (images, links, attachments).  
+It runs **only in one specified server** and uses Spring Boot, JDA, and Redis.
 
-## ✨ Features
+## Why Docker & Docker Compose in 2026?
 
-* ✅ Restricts the bot to a single allowed server (leaves others automatically).
-* 🚫 Detects **spam images/links** within a short time window.
-* 🔇 Automatically **timeouts** (mutes) spam users for a configurable duration.
-* 🧹 Deletes all recent spam media messages from the muted user.
-* 📝 Logs spam events to a configurable log channel.
-* ⚡ Uses **Redis** for fast spam detection with TTL-based counters.
+In 2026, almost every production-grade or semi-serious bot/project uses containers.  
+Reasons we still use Docker Compose here:
 
-## 🛠 Tech Stack
+- One command (`docker compose up`) starts both the bot and Redis together — no manual Redis setup, no separate terminals.
+- Consistent environment: same behavior on your laptop, VPS, or any cloud — no "it works on my machine" excuses.
+- Easy environment variable management (token, server ID, log channel) without editing files every time.
+- Automatic restarts if the bot crashes.
+- Clean shutdown and resource cleanup with `docker compose down`.
+- Zero dependency hell: no need to install Java 21, Maven/Gradle wrappers, Redis server manually on every machine.
+- Even if you hate Docker, in practice it's faster and less error-prone than bare-metal deployment for this kind of project.
 
-* **Java 21+**
-* **Spring Boot**
-* **JDA (Java Discord API)**
-* **Redis**
+If you really want to run without Docker, just build the JAR and run `java -jar` with Redis running separately — but then you're on your own for setup issues.
 
-## ⚙️ Configuration
-
-Edit your `application.yml` or `application.properties` file:
-
-```properties
-spring.application.name=killer-bot
-killerbot.botToken=
-discord.serverid=
-discord.log.channel-id=
-spring.data.redis.host=
-spring.data.redis.port=
-
-
-```
-
-### Environment Variables (Optional)
-
-Instead of hardcoding values, you can also use environment variables:
-
-```bash
-export KILLERBOT_BOTTOKEN=your_token
-export DISCORD_SERVERID=your_server_id
-export DISCORD_LOG_CHANNELID=your_log_channel
-```
-
-## 🚀 Running the Bot
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/range79/bot-killer
-   cd killerbot
-   ```
-
-2. Start Redis (if not already running):
-
-   ```bash
-   docker run -d -p 6379:6379 redis
-   ```
-
-3. Build & run with Maven/Gradle:
-
-   ```bash
-   ./gradlew bootRun
-   ```
-
-
-## 🙌 Contributors
-
-For the amazing people who helped make this project possible, see the full list of [Contributors](Contributors.md).
-
-
-## 🔒 Anti-Spam Logic
-
-* Each media message (image/link) increases a counter in Redis.
-* If a user exceeds **8 messages within 30 seconds**, they are muted for **10 hours**.
-* The bot deletes recent spam messages from all text channels.
-
-## 📜 License
-
-MIT License. Free to use and modify.
+## Why Spring Boot? (yes, we got tired of newing everything)
+In short: we were lazy/tired of repeating the same setup code over and over.  
+Spring Boot lets you focus on "delete spam → timeout user → log it" instead of "how do I make Redis work again".

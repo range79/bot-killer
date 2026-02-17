@@ -31,10 +31,6 @@ private var botProperties: BotProperties
             GatewayIntent.GUILD_VOICE_STATES,
             GatewayIntent.MESSAGE_CONTENT).build()
         jda.addEventListener(messageChecker, serverChecker)
-
-
-
-
         jda.awaitReady()
         jda.guilds.forEach { guild ->
             if (guild.id != botProperties.serverId) {
