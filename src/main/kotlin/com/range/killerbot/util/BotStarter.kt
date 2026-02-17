@@ -16,7 +16,7 @@ class BotStarter(
 
     private var messageChecker: MessageChecker,
     private var serverChecker: ServerChecker,
-private var botProperties: BotProperties
+    private var botProperties: BotProperties
 ){
 
 

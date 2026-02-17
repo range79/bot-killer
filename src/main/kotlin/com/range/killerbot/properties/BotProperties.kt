@@ -1,7 +1,5 @@
 package com.range.killerbot.properties
 
-import com.range.killerbot.exception.ServerIDISEmptyORNullException
-import com.range.killerbot.exception.TokenIsEmptyOrNullException
 import jakarta.annotation.PostConstruct
 import org.springframework.boot.context.properties.ConfigurationProperties
 
@@ -12,11 +10,13 @@ data class BotProperties (
 ){
     @PostConstruct
     fun onPostConstruct(){
-        if (token.isNullOrBlank()) {
-            throw TokenIsEmptyOrNullException("DiscordBot token cannot be null")
+        require(!token.isNullOrEmpty()) {
+            "BOT_TOKEN is missing. Please set it in .env file."
         }
-        if (serverId.isNullOrBlank()) {
-            throw ServerIDISEmptyORNullException("DiscordBot serverId cannot be null or Empty")
+
+        require(!serverId.isNullOrEmpty()) {
+            "SERVER_ID is missing. Please set it in .env file."
+        }
+
         }
     }
-}
