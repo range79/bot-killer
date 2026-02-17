@@ -1,6 +1,7 @@
 package com.range.killerbot.checker
 
 
+import com.range.killerbot.properties.MessageProperties
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
@@ -15,16 +16,15 @@ import java.time.Duration
 
 @Component
 class MessageChecker(
-    private val redisTemplate: RedisTemplate<String, String>
+    private val redisTemplate: RedisTemplate<String, String>,
+    private val messageProperties: MessageProperties,
+    properties: MessageProperties
 ) : ListenerAdapter() {
     @Value("\${discord.log.channel-id}")
     private lateinit var logChannelId: String
 
     private val logger: Logger = LoggerFactory.getLogger(MessageChecker::class.java)
 
-    private val SPAM_LIMIT = 8
-    private val TIME_WINDOW_SECONDS = 30L
-    private val MUTE_DURATION_HOURS = 10L
 
     override fun onMessageReceived(event: MessageReceivedEvent) {
 
@@ -34,7 +34,7 @@ class MessageChecker(
         val attachments = message.attachments
 
         val isMedia = attachments.any { it.isImage } || content.contains("http")
-        if (event.author.isBot)return
+        if (event.author.isBot) return
         if (!isMedia) return
         val key = "spam_multi:$userId"
 
@@ -42,10 +42,10 @@ class MessageChecker(
         val newCount = current + 1
         logger.info("current: $current, $newCount")
 
-        redisTemplate.opsForValue().set(key, newCount.toString(), Duration.ofSeconds(TIME_WINDOW_SECONDS))
+        redisTemplate.opsForValue().set(key, newCount.toString(), Duration.ofSeconds(messageProperties.messageInterval))
         logger.error("redis: ${redisTemplate.opsForValue().get(key)}")
 
-        if (newCount >= SPAM_LIMIT) {
+        if (newCount >= messageProperties.messageSpamLimit) {
             val guild = event.guild
             val member = event.getMember()
             logger.info("$member")
@@ -56,12 +56,12 @@ class MessageChecker(
                 logger.info("$guild, ${guild.selfMember.asMention},${logChannel}")
                 logChannel!!.sendMessage("User ${event.author.name} spammed images and muted!").queue()
 
-                member.timeoutFor(Duration.ofHours(MUTE_DURATION_HOURS)).queue()
-                logger.info("User ${event.author.name} muted for $MUTE_DURATION_HOURS hours due to spam")
+                member.timeoutFor(Duration.ofMinutes(messageProperties.muteDurationMinutes)).queue()
+                logger.info("User ${event.author.name} muted for ${messageProperties.muteDurationMinutes} minutes due to spam")
 
-guild.voiceChannels.forEach { voiceChannel ->
-    deleteUserMediaMessagesInVoiceChannel(voiceChannel as AudioChannelUnion,userId)
-}
+                guild.voiceChannels.forEach { voiceChannel ->
+                    deleteUserMediaMessagesInVoiceChannel(voiceChannel as AudioChannelUnion, userId)
+                }
                 guild.textChannels.forEach { channel ->
                     deleteUserMediaMessages(channel, userId)
                 }
@@ -73,16 +73,25 @@ guild.voiceChannels.forEach { voiceChannel ->
     private fun deleteUserMediaMessages(channel: TextChannel, userId: String) {
         Thread.sleep(1000)
         channel.iterableHistory.takeAsync(1000).thenAccept { messages ->
-            messages.filter { it.author.id == userId && (it.attachments.any { a -> a.isImage } || it.contentRaw.contains("http")) }
+            messages.filter {
+                it.author.id == userId && (it.attachments.any { a -> a.isImage } || it.contentRaw.contains(
+                    "http"
+                ))
+            }
                 .forEach { it.delete().queue() }
         }
     }
+
     private fun deleteUserMediaMessagesInVoiceChannel(voiceChannel: AudioChannelUnion, userId: String) {
         Thread.sleep(1000)
         val messageChannel = voiceChannel.asGuildMessageChannel()
 
         messageChannel.iterableHistory.takeAsync(1000).thenAcceptAsync { messages ->
-            messages.filter { it.author.id == userId && (it.attachments.any { a -> a.isImage } || it.contentRaw.contains("http")) }
+            messages.filter {
+                it.author.id == userId && (it.attachments.any { a -> a.isImage } || it.contentRaw.contains(
+                    "http"
+                ))
+            }
                 .forEach { it.delete().queue() }
         }
     }
