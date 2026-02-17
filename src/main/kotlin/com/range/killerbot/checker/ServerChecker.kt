@@ -1,5 +1,6 @@
 package com.range.killerbot.checker
 
+import com.range.killerbot.properties.BotProperties
 import jakarta.annotation.PostConstruct
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent
@@ -11,11 +12,10 @@ import org.springframework.stereotype.Component
 
 @Component
 class ServerChecker(
-
+private val botProperties: BotProperties
 ) : ListenerAdapter() {
 
-    @Value("\${discord.serverid}")
-    private lateinit var allowedServerID: String
+
 
     private val logger: Logger = LoggerFactory.getLogger(ServerChecker::class.java)
 
@@ -23,7 +23,7 @@ class ServerChecker(
 
     override fun onGuildJoin(event: GuildJoinEvent) {
         val guild = event.guild
-        if (guild.id != allowedServerID) {
+        if (guild.id != botProperties.serverId) {
             logger.info("Not allowed server added: ${guild.name}. Leaving...")
             guild.leave().queue()
         }

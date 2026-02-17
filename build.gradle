@@ -24,7 +24,6 @@ dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
     implementation group: 'net.dv8tion', name: 'JDA', version: '6.3.1'
 
-    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'

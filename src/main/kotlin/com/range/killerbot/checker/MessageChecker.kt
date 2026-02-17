@@ -1,6 +1,7 @@
 package com.range.killerbot.checker
 
 
+import com.range.killerbot.exception.LogChannelNotFoundException
 import com.range.killerbot.properties.MessageProperties
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion
@@ -8,7 +9,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 import java.time.Duration
@@ -18,10 +18,8 @@ import java.time.Duration
 class MessageChecker(
     private val redisTemplate: RedisTemplate<String, String>,
     private val messageProperties: MessageProperties,
-    properties: MessageProperties
-) : ListenerAdapter() {
-    @Value("\${discord.log.channel-id}")
-    private lateinit var logChannelId: String
+    ) : ListenerAdapter() {
+
 
     private val logger: Logger = LoggerFactory.getLogger(MessageChecker::class.java)
 
@@ -47,14 +45,22 @@ class MessageChecker(
 
         if (newCount >= messageProperties.messageSpamLimit) {
             val guild = event.guild
-            val member = event.getMember()
+            val member = event.member
             logger.info("$member")
 
             if (member != null && guild.selfMember.canInteract(member)) {
                 logger.info("${guild.selfMember.canInteract(member)}")
-                val logChannel = guild.getTextChannelById(logChannelId)
-                logger.info("$guild, ${guild.selfMember.asMention},${logChannel}")
-                logChannel!!.sendMessage("User ${event.author.name} spammed images and muted!").queue()
+
+
+
+                messageProperties.logChannelId
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { id ->
+                        val logChannel = guild.getTextChannelById(id)
+                            ?: throw LogChannelNotFoundException("LogChannel not found. id=$id, guild=${guild.id}")
+
+                        logChannel.sendMessage("User ${event.author.asMention} spammed images and muted!").queue()
+                    }
 
                 member.timeoutFor(Duration.ofMinutes(messageProperties.muteDurationMinutes)).queue()
                 logger.info("User ${event.author.name} muted for ${messageProperties.muteDurationMinutes} minutes due to spam")
