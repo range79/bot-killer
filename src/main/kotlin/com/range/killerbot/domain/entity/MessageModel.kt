@@ -5,18 +5,19 @@ import org.springframework.data.redis.core.RedisHash
 import org.springframework.data.redis.core.TimeToLive
 import java.io.Serializable
 import java.time.OffsetDateTime
+import java.util.UUID
 import java.util.concurrent.TimeUnit
-
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+@OptIn(ExperimentalUuidApi::class)
 @RedisHash("message")
 data class MessageModel(
     @Id
-    var id: String,
+    var id: Uuid,
     var text: String,
     val author: String,
-    val timestamp: TimeUnit,
-
     @TimeToLive
-    var ttl: Long = 30
+    var ttl: Long
 
 
 ) : Serializable

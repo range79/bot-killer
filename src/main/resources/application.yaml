@@ -1,0 +1,15 @@
+killerbot:
+  token: ${BOT_TOKEN:}
+  server-id: ${SERVER_ID:}
+message:
+  log-channel-id: ${DISCORD_LOG_CHANNEL:}
+  message-interval: ${MESSAGE_INTERVAL:30}
+  message-spam-limit: ${MESSAGE_LIMIT:8}
+  mute-duration-minutes: ${BAN_MINUTES:600}
+spring:
+  main:
+    web-application-type: none
+  data:
+    redis:
+      host: localhost
+      port: 6379

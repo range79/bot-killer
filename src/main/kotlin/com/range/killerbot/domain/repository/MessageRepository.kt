@@ -1,4 +1,4 @@
-package com.range.killerbot.repository
+package com.range.killerbot.domain.repository
 
 import com.range.killerbot.domain.entity.MessageModel
 import org.springframework.data.repository.CrudRepository

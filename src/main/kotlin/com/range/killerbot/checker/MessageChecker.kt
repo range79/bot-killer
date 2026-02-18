@@ -1,6 +1,7 @@
 package com.range.killerbot.checker
 
 
+import com.range.killerbot.domain.repository.MessageRepository
 import com.range.killerbot.exception.LogChannelNotFoundException
 import com.range.killerbot.properties.MessageProperties
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
@@ -16,7 +17,7 @@ import java.time.Duration
 
 @Component
 class MessageChecker(
-    private val redisTemplate: RedisTemplate<String, String>,
+    private val messageRepository: MessageRepository,
     private val messageProperties: MessageProperties,
     ) : ListenerAdapter() {
 
@@ -34,47 +35,11 @@ class MessageChecker(
         val isMedia = attachments.any { it.isImage } || content.contains("http")
         if (event.author.isBot) return
         if (!isMedia) return
-        val key = "spam_multi:$userId"
-
-        val current = redisTemplate.opsForValue().get(key)?.toIntOrNull() ?: 0
-        val newCount = current + 1
-        logger.info("current: $current, $newCount")
-
-        redisTemplate.opsForValue().set(key, newCount.toString(), Duration.ofSeconds(messageProperties.messageInterval))
-        logger.error("redis: ${redisTemplate.opsForValue().get(key)}")
-
-        if (newCount >= messageProperties.messageSpamLimit) {
-            val guild = event.guild
-            val member = event.member
-            logger.info("$member")
-
-            if (member != null && guild.selfMember.canInteract(member)) {
-                logger.info("${guild.selfMember.canInteract(member)}")
+9
 
 
-
-                messageProperties.logChannelId
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { id ->
-                        val logChannel = guild.getTextChannelById(id)
-                            ?: throw LogChannelNotFoundException("LogChannel not found. id=$id, guild=${guild.id}")
-
-                        logChannel.sendMessage("User ${event.author.asMention} spammed images and muted!").queue()
-                    }
-
-                member.timeoutFor(Duration.ofMinutes(messageProperties.muteDurationMinutes)).queue()
-                logger.info("User ${event.author.name} muted for ${messageProperties.muteDurationMinutes} minutes due to spam")
-
-                guild.voiceChannels.forEach { voiceChannel ->
-                    deleteUserMediaMessagesInVoiceChannel(voiceChannel as AudioChannelUnion, userId)
-                }
-                guild.textChannels.forEach { channel ->
-                    deleteUserMediaMessages(channel, userId)
-                }
-            }
-            redisTemplate.delete(key)
         }
-    }
+
 
     private fun deleteUserMediaMessages(channel: TextChannel, userId: String) {
         Thread.sleep(1000)
