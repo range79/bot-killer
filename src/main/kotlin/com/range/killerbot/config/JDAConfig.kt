@@ -1,4 +1,4 @@
-package com.range.killerbot.util
+package com.range.killerbot.config
 
 import com.range.killerbot.checker.MessageChecker
 import com.range.killerbot.checker.ServerChecker
@@ -7,12 +7,11 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.requests.GatewayIntent
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.stereotype.Component
 
 @Component
-class BotStarter(
+class JDAConfig(
 
     private var messageChecker: MessageChecker,
     private var serverChecker: ServerChecker,
@@ -20,7 +19,7 @@ class BotStarter(
 ){
 
 
-    private val logger = LoggerFactory.getLogger(BotStarter::class.java)
+    private val logger = LoggerFactory.getLogger(JDAConfig::class.java)
 
 
     @Bean
