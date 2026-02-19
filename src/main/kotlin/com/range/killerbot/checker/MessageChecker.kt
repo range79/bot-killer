@@ -3,6 +3,7 @@ package com.range.killerbot.checker
 import com.range.killerbot.properties.MessageProperties
 import com.range.killerbot.service.MessageSaveService
 import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -40,6 +41,8 @@ class MessageChecker(
             deleteUserMediaMessagesInAllTextChannels(event.guild, userId)
 
             messageSaveService.deleteUserMessages(userId)
+            logUserMuted(event.guild, member, count)
+
             return
         }
 
@@ -50,9 +53,28 @@ class MessageChecker(
         guild.textChannels.forEach { ch ->
 
             deleteRecentUserMediaMessages(ch, userId, messageProperties.imageDeleteLimit?:50)
-    TODO(" add logging to log channel")
+
         }
     }
+    private fun logUserMuted(guild: Guild, member: Member) {
+        val logChannelId = messageProperties.logChannelId
+        if (logChannelId.isNullOrBlank()) return
+
+        val logChannel = guild.getTextChannelById(logChannelId) ?: return
+
+        val text =
+            "User timed out for media spam.\n" +
+                    "User: ${member.user.asTag}\n" +
+                    "Duration: ${messageProperties.muteDurationMinutes} minutes"
+
+        logChannel.sendMessage(text).queue(
+            { },
+            { err -> log.warn("Failed to send log message: {}", err.message) }
+        )
+    }
+
+
+
 
     private fun deleteRecentUserMediaMessages(channel: TextChannel, userId: String, limit: Int) {
         channel.iterableHistory.takeAsync(limit).thenAccept { messages ->
