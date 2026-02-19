@@ -49,8 +49,8 @@ class MessageChecker(
     private fun deleteUserMediaMessagesInAllTextChannels(guild: Guild, userId: String) {
         guild.textChannels.forEach { ch ->
 
-            deleteRecentUserMediaMessages(ch, userId, messageProperties.imageDeletedLimit?:50)
-        TODO("fix app properties")
+            deleteRecentUserMediaMessages(ch, userId, messageProperties.imageDeleteLimit?:50)
+    TODO(" add logging to log channel")
         }
     }
 
