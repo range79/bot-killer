@@ -6,6 +6,7 @@ message:
   message-interval: ${MESSAGE_INTERVAL:30}
   message-spam-limit: ${MESSAGE_LIMIT:8}
   mute-duration-minutes: ${BAN_MINUTES:600}
+  image-deleted-limit:
 spring:
   main:
     web-application-type: none

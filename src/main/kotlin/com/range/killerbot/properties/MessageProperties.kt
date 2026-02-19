@@ -10,6 +10,7 @@ data class MessageProperties (
     var messageInterval: Long,
     var muteDurationMinutes: Long,
     var logChannelId: String?,
+    var imageDeleteLimit: Int?
 ){
     companion object{
         private val logger = LoggerFactory.getLogger(MessageProperties::class.java)
