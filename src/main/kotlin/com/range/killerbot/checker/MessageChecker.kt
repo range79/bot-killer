@@ -1,71 +1,63 @@
 package com.range.killerbot.checker
 
-
-import com.range.killerbot.domain.repository.MessageRepository
-import com.range.killerbot.exception.LogChannelNotFoundException
 import com.range.killerbot.properties.MessageProperties
+import com.range.killerbot.service.MessageSaveService
+import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
-import java.time.Duration
-
+import java.util.concurrent.TimeUnit
 
 @Component
 class MessageChecker(
-    private val messageRepository: MessageRepository,
     private val messageProperties: MessageProperties,
-    ) : ListenerAdapter() {
+    private val messageSaveService: MessageSaveService,
+) : ListenerAdapter() {
 
-
-    private val logger: Logger = LoggerFactory.getLogger(MessageChecker::class.java)
-
+    private val log = LoggerFactory.getLogger(MessageChecker::class.java)
+    private val urlRegex = Regex("""https?://""")
 
     override fun onMessageReceived(event: MessageReceivedEvent) {
+        if (event.author.isBot) return
+        if (!event.isFromGuild) return
 
         val userId = event.author.id
-        val message = event.message
-        val content = message.contentRaw
-        val attachments = message.attachments
+        val member = event.member ?: return
+        val msg = event.message
 
-        val isMedia = attachments.any { it.isImage } || content.contains("http")
-        if (event.author.isBot) return
+        val isMedia = msg.attachments.any { it.isImage } || urlRegex.containsMatchIn(msg.contentRaw)
         if (!isMedia) return
-9
 
+        val count = messageSaveService.countUserId(userId)
 
+        if (count >= messageProperties.messageSpamLimit) {
+            log.warn("User {} media spam count={}", member.user.asTag, count)
+
+            member.timeoutFor(messageProperties.muteDurationMinutes, TimeUnit.MINUTES).queue()
+
+            deleteUserMediaMessagesInAllTextChannels(event.guild, userId)
+
+            messageSaveService.deleteUserMessages(userId)
+            return
         }
 
+        messageSaveService.save(msg.contentRaw, userId)
+    }
 
-    private fun deleteUserMediaMessages(channel: TextChannel, userId: String) {
-        Thread.sleep(1000)
-        channel.iterableHistory.takeAsync(1000).thenAccept { messages ->
-            messages.filter {
-                it.author.id == userId && (it.attachments.any { a -> a.isImage } || it.contentRaw.contains(
-                    "http"
-                ))
-            }
-                .forEach { it.delete().queue() }
+    private fun deleteUserMediaMessagesInAllTextChannels(guild: Guild, userId: String) {
+        guild.textChannels.forEach { ch ->
+            deleteRecentUserMediaMessages(ch, userId, limit = 50)
         }
     }
 
-    private fun deleteUserMediaMessagesInVoiceChannel(voiceChannel: AudioChannelUnion, userId: String) {
-        Thread.sleep(1000)
-        val messageChannel = voiceChannel.asGuildMessageChannel()
-
-        messageChannel.iterableHistory.takeAsync(1000).thenAcceptAsync { messages ->
-            messages.filter {
-                it.author.id == userId && (it.attachments.any { a -> a.isImage } || it.contentRaw.contains(
-                    "http"
-                ))
-            }
+    private fun deleteRecentUserMediaMessages(channel: TextChannel, userId: String, limit: Int) {
+        channel.iterableHistory.takeAsync(limit).thenAccept { messages ->
+            messages.asSequence()
+                .filter { it.author.id == userId }
+                .filter { it.attachments.any { a -> a.isImage } || urlRegex.containsMatchIn(it.contentRaw) }
                 .forEach { it.delete().queue() }
         }
     }
-
 }
-

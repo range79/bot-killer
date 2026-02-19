@@ -5,4 +5,5 @@ import com.range.killerbot.domain.entity.MessageModel
 interface MessageSaveService {
     fun save(message: String,author: String): MessageModel
     fun countUserId(author: String): Int
+    fun deleteUserMessages(author: String)
 }

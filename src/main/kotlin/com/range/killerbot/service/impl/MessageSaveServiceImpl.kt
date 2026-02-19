@@ -27,4 +27,10 @@ class MessageSaveServiceImpl (
     override fun countUserId(author: String): Int {
         return messageRepository.countMessageByAuthor(author)
     }
+
+    override fun deleteUserMessages(author: String) {
+    return messageRepository.deleteAllByAuthor(author)
+    }
+
+
 }
