@@ -41,7 +41,7 @@ class MessageChecker(
             deleteUserMediaMessagesInAllTextChannels(event.guild, userId)
 
             messageSaveService.deleteUserMessages(userId)
-            logUserMuted(event.guild, member, count)
+            logUserMuted(event.guild, member)
 
             return
         }
@@ -52,7 +52,7 @@ class MessageChecker(
     private fun deleteUserMediaMessagesInAllTextChannels(guild: Guild, userId: String) {
         guild.textChannels.forEach { ch ->
 
-            deleteRecentUserMediaMessages(ch, userId, messageProperties.imageDeleteLimit?:50)
+            deleteRecentUserMediaMessages(ch, userId, messageProperties.imageDeleteLimit)
 
         }
     }

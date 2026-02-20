@@ -1,5 +1,5 @@
-FROM openjdk:17-jdk-alpine
+FROM eclipse-temurin:21-jre
 LABEL authors="range79"
-COPY
+COPY build/libs/app.jar app.jar
 
-ENTRYPOINT ["top", "-b"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
