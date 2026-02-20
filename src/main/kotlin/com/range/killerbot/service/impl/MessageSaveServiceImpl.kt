@@ -5,6 +5,7 @@ import com.range.killerbot.domain.repository.MessageRepository
 import com.range.killerbot.properties.MessageProperties
 import com.range.killerbot.service.MessageSaveService
 import org.springframework.stereotype.Service
+import kotlin.math.log
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -15,6 +16,7 @@ class MessageSaveServiceImpl (
 ): MessageSaveService {
     @OptIn(ExperimentalUuidApi::class)
     override fun save(message: String,author: String): MessageModel {
+
         val messageModel = MessageModel(
             Uuid.generateV7().toString(),
             message,
@@ -24,8 +26,8 @@ class MessageSaveServiceImpl (
         return messageRepository.save(messageModel)
     }
 
-    override fun countUserId(author: String): Int {
-        return messageRepository.countMessageByAuthor(author)
+    override fun countUserId(author: String): Long {
+        return messageRepository.countByAuthor(author)
     }
 
     override fun deleteUserMessages(author: String) {

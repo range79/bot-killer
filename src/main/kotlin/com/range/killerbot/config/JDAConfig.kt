@@ -25,6 +25,7 @@ class JDAConfig(
     @Bean
     fun run(): JDA {
         val jda = JDABuilder.createDefault(botProperties.token,
+            GatewayIntent.GUILD_MEMBERS,
             GatewayIntent.GUILD_MESSAGES,
             GatewayIntent.DIRECT_MESSAGES,
             GatewayIntent.GUILD_VOICE_STATES,
