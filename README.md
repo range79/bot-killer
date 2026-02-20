@@ -1,4 +1,4 @@
-Markdown# KillerBot
+# KillerBot
 
 KillerBot is a simple Discord moderation bot focused on anti-spam protection for media messages (images, links, attachments).  
 It runs **only in one specified server** and uses Spring Boot, JDA, and Redis.
@@ -24,5 +24,5 @@ Spring Boot lets you focus on "delete spam → timeout user → log it" instead 
 
 
 
-# How I Write My .env File
+## How I Write My .env File
 **[Env Guide](Env.md)**
