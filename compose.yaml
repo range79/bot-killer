@@ -1,14 +1,12 @@
-  services:
-    redis:
-      image: 'redis:latest'
-      ports:
-        - '6379:6379'
-      restart: always
-    bot:
-      build:
-        context: .
-        dockerfile: Dockerfile
-      env_file:
-        - .env
-      depends_on:
-        - redis
+services:
+  redis:
+    image: 'redis:latest'
+    restart: always
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis

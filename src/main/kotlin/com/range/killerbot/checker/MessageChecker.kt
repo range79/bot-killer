@@ -102,12 +102,7 @@ class MessageChecker(
             limit
         )
 
-        try {
-            messageSaveService.deleteUserMessages(userId)
-            log.info("REDIS DELETE OK user={}", userId)
-        } catch (e: Exception) {
-            log.error("REDIS DELETE FAIL", e)
-        }
+
 
         logUserMuted(event.guild, member)
     }

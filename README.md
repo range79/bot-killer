@@ -28,4 +28,24 @@ Spring Boot lets you focus on "delete spam → timeout user → log it" instead 
 **[Env Guide](Env.md)**
 
 
+# how my compose file should be ?
+create a file named docker-compose.yaml
+```shell
+services:
+  redis:
+    image: 'redis:latest'
+    restart: always
+  bot:
+    image: funcrange1/killerbot-discord-bot:latest
+    env_file:
+      - .env
+    depends_on:
+      - redis
+```
 
+
+# after creating compose yaml and fill .env how i start this?
+
+```shell
+docker compose up -d
+```
