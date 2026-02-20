@@ -22,7 +22,7 @@ jobs:
 
 
       - name: Build jar (bot)
-        working-directory: bot
+        working-directory: .
         run: |
           chmod +x ./gradlew
           ./gradlew bootJar
