@@ -13,7 +13,7 @@ import kotlin.uuid.Uuid
 @RedisHash("message")
 data class MessageModel(
     @Id
-    var id: Uuid,
+    var id: String,
     var text: String,
     val author: String,
     @TimeToLive

@@ -16,7 +16,7 @@ class MessageSaveServiceImpl (
     @OptIn(ExperimentalUuidApi::class)
     override fun save(message: String,author: String): MessageModel {
         val messageModel = MessageModel(
-            Uuid.generateV7(),
+            Uuid.generateV7().toString(),
             message,
             author,
             messageProperties.messageInterval

@@ -21,3 +21,8 @@ If you really want to run without Docker, just build the JAR and run `java -jar`
 ## Why Spring Boot? (yes, we got tired of newing everything)
 In short: we were lazy/tired of repeating the same setup code over and over.  
 Spring Boot lets you focus on "delete spam → timeout user → log it" instead of "how do I make Redis work again".
+
+
+
+# How I Write My .env File
+**[Env Guide](Env.md)**
