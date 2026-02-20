@@ -1,91 +1,197 @@
 package com.range.killerbot.checker
 
-
+import com.range.killerbot.properties.MessageProperties
+import com.range.killerbot.service.MessageSaveService
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
-import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 import java.time.Duration
 
-
 @Component
 class MessageChecker(
-    private val redisTemplate: RedisTemplate<String, String>
+    private val messageProperties: MessageProperties,
+    private val messageSaveService: MessageSaveService,
 ) : ListenerAdapter() {
-    @Value("\${discord.log.channel-id}")
-    private lateinit var logChannelId: String
 
-    private val logger: Logger = LoggerFactory.getLogger(MessageChecker::class.java)
+    private val log = LoggerFactory.getLogger(MessageChecker::class.java)
 
-    private val SPAM_LIMIT = 8
-    private val TIME_WINDOW_SECONDS = 30L
-    private val MUTE_DURATION_HOURS = 10L
+    private val urlRegex =
+        """https?://[^\s/$.?#].\S*""".toRegex(RegexOption.IGNORE_CASE)
 
     override fun onMessageReceived(event: MessageReceivedEvent) {
 
+        log.info(
+            "EVENT msgId={} user={} guild={}",
+            event.messageId,
+            event.author.id,
+            event.guild.id
+        )
+
+        if (event.author.isBot) return
+        if (!event.isFromGuild) return
+
         val userId = event.author.id
-        val message = event.message
-        val content = message.contentRaw
-        val attachments = message.attachments
 
-        val isMedia = attachments.any { it.isImage } || content.contains("http")
-        if (event.author.isBot)return
+        val member = event.member ?: run {
+            log.warn("MEMBER NULL user={} guild={}", userId, event.guild.id)
+            return
+        }
+
+        val msg = event.message
+
+        val isImage = msg.attachments.any { it.isImage }
+        val hasUrl = urlRegex.containsMatchIn(msg.contentRaw)
+        val isMedia = isImage || hasUrl
+
+        log.info("MEDIA image={} url={} result={}", isImage, hasUrl, isMedia)
+
         if (!isMedia) return
-        val key = "spam_multi:$userId"
 
-        val current = redisTemplate.opsForValue().get(key)?.toIntOrNull() ?: 0
-        val newCount = current + 1
-        logger.info("current: $current, $newCount")
+        log.info("CONTENT {}", msg.contentRaw.take(150))
 
-        redisTemplate.opsForValue().set(key, newCount.toString(), Duration.ofSeconds(TIME_WINDOW_SECONDS))
-        logger.error("redis: ${redisTemplate.opsForValue().get(key)}")
+        try {
+            messageSaveService.save(msg.contentRaw, userId)
+            log.info("REDIS SAVE OK user={}", userId)
+        } catch (e: Exception) {
+            log.error("REDIS SAVE FAIL", e)
+        }
 
-        if (newCount >= SPAM_LIMIT) {
-            val guild = event.guild
-            val member = event.getMember()
-            logger.info("$member")
+        val count = try {
+            messageSaveService.countUserId(userId)
+        } catch (e: Exception) {
+            log.error("REDIS COUNT FAIL", e)
+            -1
+        }
 
-            if (member != null && guild.selfMember.canInteract(member)) {
-                logger.info("${guild.selfMember.canInteract(member)}")
-                val logChannel = guild.getTextChannelById(logChannelId)
-                logger.info("$guild, ${guild.selfMember.asMention},${logChannel}")
-                logChannel!!.sendMessage("User ${event.author.name} spammed images and muted!").queue()
+        log.info(
+            "COUNT user={} count={} limit={}",
+            userId,
+            count,
+            messageProperties.messageSpamLimit
+        )
 
-                member.timeoutFor(Duration.ofHours(MUTE_DURATION_HOURS)).queue()
-                logger.info("User ${event.author.name} muted for $MUTE_DURATION_HOURS hours due to spam")
+        if (count < messageProperties.messageSpamLimit) return
 
-guild.voiceChannels.forEach { voiceChannel ->
-    deleteUserMediaMessagesInVoiceChannel(voiceChannel as AudioChannelUnion,userId)
-}
-                guild.textChannels.forEach { channel ->
-                    deleteUserMediaMessages(channel, userId)
-                }
+        log.warn(
+            "SPAM user={} tag={} count={}",
+            userId,
+            member.user.asTag,
+            count
+        )
+
+        member.timeoutFor(
+            Duration.ofMinutes(messageProperties.muteDurationMinutes)
+        ).queue(
+            {
+                log.info("TIMEOUT OK {}", member.user.asTag)
+            },
+            { err ->
+                log.error("TIMEOUT FAIL {}", err.message)
             }
-            redisTemplate.delete(key)
+        )
+
+        val limit = messageProperties.imageDeleteLimit.coerceIn(1, 100)
+
+        deleteUserMediaMessagesInAllTextChannels(
+            event.guild,
+            userId,
+            limit
+        )
+
+        try {
+            messageSaveService.deleteUserMessages(userId)
+            log.info("REDIS DELETE OK user={}", userId)
+        } catch (e: Exception) {
+            log.error("REDIS DELETE FAIL", e)
+        }
+
+        logUserMuted(event.guild, member)
+    }
+
+    private fun deleteUserMediaMessagesInAllTextChannels(
+        guild: Guild,
+        userId: String,
+        limit: Int
+    ) {
+
+        guild.textChannels.forEach { ch ->
+
+            log.info("SCAN CHANNEL #{}", ch.name)
+
+            deleteRecentUserMediaMessages(ch, userId, limit)
         }
     }
 
-    private fun deleteUserMediaMessages(channel: TextChannel, userId: String) {
-        Thread.sleep(1000)
-        channel.iterableHistory.takeAsync(1000).thenAccept { messages ->
-            messages.filter { it.author.id == userId && (it.attachments.any { a -> a.isImage } || it.contentRaw.contains("http")) }
-                .forEach { it.delete().queue() }
-        }
-    }
-    private fun deleteUserMediaMessagesInVoiceChannel(voiceChannel: AudioChannelUnion, userId: String) {
-        Thread.sleep(1000)
-        val messageChannel = voiceChannel.asGuildMessageChannel()
+    private fun deleteRecentUserMediaMessages(
+        channel: TextChannel,
+        userId: String,
+        limit: Int
+    ) {
 
-        messageChannel.iterableHistory.takeAsync(1000).thenAcceptAsync { messages ->
-            messages.filter { it.author.id == userId && (it.attachments.any { a -> a.isImage } || it.contentRaw.contains("http")) }
-                .forEach { it.delete().queue() }
-        }
+        channel.iterableHistory
+            .takeAsync(limit)
+            .thenAccept { messages ->
+
+                log.info(
+                    "HISTORY #{} size={}",
+                    channel.name,
+                    messages.size
+                )
+
+                messages.asSequence()
+                    .filter { it.author.id == userId }
+                    .filter {
+                        it.attachments.any { a -> a.isImage } ||
+                                urlRegex.containsMatchIn(it.contentRaw)
+                    }
+                    .forEach { it ->
+
+                        it.delete().queue(
+                            {
+                                log.info("DELETE OK {}",it )
+                            },
+                            { err ->
+                                log.error(
+                                    "DELETE FAIL {} {}",
+                                    it.id,
+                                    err.message
+                                )
+                            }
+                        )
+                    }
+            }
+            .exceptionally { err ->
+                log.error("HISTORY FAIL", err)
+                null
+            }
     }
 
+    private fun logUserMuted(guild: Guild, member: Member) {
+
+        val logChannelId = messageProperties.logChannelId
+
+        if (logChannelId.isNullOrBlank()) return
+
+        val logChannel =
+            guild.getTextChannelById(logChannelId) ?: return
+
+        val text = """
+User timed out for media spam
+User: ${member.user.asTag}
+Duration: ${messageProperties.muteDurationMinutes} minutes
+""".trimIndent()
+
+        logChannel.sendMessage(text).queue(
+            {
+                log.info("LOG SENT")
+            },
+            { err ->
+                log.error("LOG FAIL {}", err.message)
+            }
+        )
+    }
 }
-

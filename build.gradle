@@ -18,17 +18,18 @@ java {
 repositories {
     mavenCentral()
 }
+tasks.named('bootJar') {
+    archiveFileName = "app.jar"
+}
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
     implementation group: 'net.dv8tion', name: 'JDA', version: '6.3.1'
 
-    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
-    runtimeOnly 'org.springframework.boot:spring-boot-docker-compose'
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
