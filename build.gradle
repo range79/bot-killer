@@ -25,7 +25,7 @@ tasks.named('bootJar') {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.jetbrains.kotlin:kotlin-reflect'
-    implementation group: 'net.dv8tion', name: 'JDA', version: '6.3.1'
+    implementation group: 'net.dv8tion', name: 'JDA', version: '6.3.2'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
